@@ -69,7 +69,7 @@ public:
     const std::string &operator * () const noexcept {
         return buf;
     }
-    explicit NullLogger();
+    NullLogger() = delete;
     explicit NullLogger(...);
 };
 
@@ -93,23 +93,15 @@ public:
     const std::string &operator * () const {
         return buf;
     }
-    explicit BaseLogger(std::source_location sloc, std::string s, auto&& ...rest) {
+    explicit BaseLogger(std::source_location sloc) {
         loc = sloc;
-        (*this)(s, std::forward<decltype(rest)>(rest)...);
     }
-    explicit BaseLogger(std::source_location sloc, const char *s, auto&& ...rest) {
-        loc = sloc;
-        (*this)(s, std::forward<decltype(rest)>(rest)...);
-    }
-    explicit BaseLogger() = default;
+    BaseLogger() = delete;
 };
 
 template <enum log_level Lv>
 using Logger = std::conditional_t<(Lv >= LOG_LEVEL), BaseLogger<Lv>, NullLogger>;
 
-#define LOG_ERROR(s, ...)     Logger<ERROR>(std::source_location::current(), s, ##__VA_ARGS__)
-#define LOG_EXCEPTION(s, ...) Logger<EXCEPTION>(std::source_location::current(), s, ##__VA_ARGS__)
-#define LOG_WARNING(s, ...)   Logger<WARNING>(std::source_location::current(), s, ##__VA_ARGS__)
-#define LOG_INFO(s, ...)      Logger<INFO>(std::source_location::current(), s, ##__VA_ARGS__)
-
-#define LOG(lv)               LOG_##lv
+auto LOG(enum log_level level, std::source_location loc = std::source_location::current()) {
+    return Logger<level>(loc);
+}
